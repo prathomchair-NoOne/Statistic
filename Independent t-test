@@ -1,0 +1,724 @@
+<!DOCTYPE html>
+<html lang="th">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Independent t-test Calculator & Clinical Simulator</title>
+    <!-- Tailwind CSS CDN -->
+    <script src="https://cdn.tailwindcss.com"></script>
+    <!-- Chart.js CDN -->
+    <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
+    <!-- FontAwesome Icons -->
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
+    <!-- Google Fonts: Prompt -->
+    <link href="https://fonts.googleapis.com/css2?family=Prompt:wght@300;400;500;600;700&display=swap" rel="stylesheet">
+    <style>
+        body {
+            font-family: 'Prompt', sans-serif;
+        }
+        input[type=number]::-webkit-inner-spin-button, 
+        input[type=number]::-webkit-outer-spin-button { 
+            -webkit-appearance: none;
+            margin: 0;
+        }
+    </style>
+</head>
+<body class="bg-slate-900 text-slate-100 min-h-screen flex flex-col">
+
+    <!-- Navigation Header -->
+    <header class="bg-slate-800/80 backdrop-blur border-b border-slate-700 sticky top-0 z-50 px-4 py-3 shadow-md">
+        <div class="max-w-7xl mx-auto flex flex-wrap justify-between items-center gap-3">
+            <div class="flex items-center gap-3">
+                <div class="bg-teal-500/20 text-teal-400 p-2.5 rounded-xl border border-teal-500/30">
+                    <i class="fa-solid fa-scale-balanced text-xl"></i>
+                </div>
+                <div>
+                    <h1 class="font-bold text-lg text-white leading-tight">Independent t-test Calculator</h1>
+                    <p class="text-xs text-slate-400">เครื่องมือคำนวณและแปลผลสถิติเปรียบเทียบ 2 กลุ่มอิสระทางกายภาพบำบัด</p>
+                </div>
+            </div>
+            <div class="flex items-center gap-2">
+                <button id="loadPresetBtn" class="bg-slate-700 hover:bg-slate-600 text-slate-200 text-xs md:text-sm px-3 py-2 rounded-lg transition border border-slate-600 flex items-center gap-1.5">
+                    <i class="fa-solid fa-folder-open text-teal-400"></i> โหลดตัวอย่างเคส
+                </button>
+                <button id="missionBtn" class="bg-gradient-to-r from-amber-500 to-orange-600 hover:from-amber-600 hover:to-orange-700 text-white font-medium text-xs md:text-sm px-4 py-2 rounded-lg shadow-lg transition flex items-center gap-2">
+                    <i class="fa-solid fa-trophy text-amber-200"></i> โจทย์ท้าทาย (Challenge)
+                </button>
+            </div>
+        </div>
+    </header>
+
+    <!-- Main Content Layout -->
+    <main class="flex-1 max-w-7xl w-full mx-auto p-4 md:p-6 grid grid-cols-1 lg:grid-cols-12 gap-6">
+
+        <!-- Left Column: Input Data Panel (5 cols) -->
+        <section class="lg:col-span-5 bg-slate-800/60 border border-slate-700/80 rounded-2xl p-5 shadow-xl flex flex-col gap-5">
+            <div class="border-b border-slate-700 pb-3 flex items-center justify-between">
+                <h2 class="font-semibold text-slate-200 text-base flex items-center gap-2">
+                    <i class="fa-solid fa-sliders text-teal-400"></i> กรอกข้อมูลดิบสถิติ (Summary Statistics)
+                </h2>
+                <button id="resetFormBtn" class="text-xs text-slate-400 hover:text-teal-400 transition flex items-center gap-1">
+                    <i class="fa-solid fa-rotate-right"></i> รีเซ็ต
+                </button>
+            </div>
+
+            <!-- Tail Option (One-tailed vs Two-tailed) -->
+            <div class="bg-slate-900/60 p-3 rounded-xl border border-slate-700/50 flex items-center justify-between">
+                <label class="text-xs font-medium text-slate-300">ทิศทางสมมติฐาน (Hypothesis Tail)</label>
+                <select id="tailType" class="bg-slate-800 border border-slate-600 text-teal-300 text-xs rounded-lg px-2.5 py-1.5 focus:outline-none focus:border-teal-400">
+                    <option value="two">Two-tailed (ทดสอบความต่างสองทาง)</option>
+                    <option value="one">One-tailed (ทดสอบทางเดียว)</option>
+                </select>
+            </div>
+
+            <!-- Group 1 Inputs -->
+            <div class="bg-slate-900/80 p-4 rounded-xl border border-slate-700/70 space-y-3">
+                <div class="flex items-center justify-between border-b border-slate-800 pb-2">
+                    <span class="text-xs font-bold text-indigo-400 flex items-center gap-1.5">
+                        <i class="fa-solid fa-users"></i> กลุ่มที่ 1 (Group 1 - e.g., Intervention)
+                    </span>
+                </div>
+                <div class="grid grid-cols-3 gap-2 text-xs">
+                    <div>
+                        <label class="block text-slate-400 mb-1">ขนาดตัวอย่าง ($n_1$)</label>
+                        <input type="number" id="n1" value="30" min="2" class="w-full bg-slate-800 border border-slate-700 rounded-lg p-2 text-white font-mono focus:border-teal-400 focus:outline-none">
+                    </div>
+                    <div>
+                        <label class="block text-slate-400 mb-1">ค่าเฉลี่ย ($\bar{x}_1$)</label>
+                        <input type="number" id="mean1" value="65.4" step="0.1" class="w-full bg-slate-800 border border-slate-700 rounded-lg p-2 text-white font-mono focus:border-teal-400 focus:outline-none">
+                    </div>
+                    <div>
+                        <label class="block text-slate-400 mb-1">ส่วนเบี่ยงเบน ($SD_1$)</label>
+                        <input type="number" id="sd1" value="8.2" step="0.1" min="0.01" class="w-full bg-slate-800 border border-slate-700 rounded-lg p-2 text-white font-mono focus:border-teal-400 focus:outline-none">
+                    </div>
+                </div>
+            </div>
+
+            <!-- Group 2 Inputs -->
+            <div class="bg-slate-900/80 p-4 rounded-xl border border-slate-700/70 space-y-3">
+                <div class="flex items-center justify-between border-b border-slate-800 pb-2">
+                    <span class="text-xs font-bold text-teal-400 flex items-center gap-1.5">
+                        <i class="fa-solid fa-users-line"></i> กลุ่มที่ 2 (Group 2 - e.g., Control)
+                    </span>
+                </div>
+                <div class="grid grid-cols-3 gap-2 text-xs">
+                    <div>
+                        <label class="block text-slate-400 mb-1">ขนาดตัวอย่าง ($n_2$)</label>
+                        <input type="number" id="n2" value="30" min="2" class="w-full bg-slate-800 border border-slate-700 rounded-lg p-2 text-white font-mono focus:border-teal-400 focus:outline-none">
+                    </div>
+                    <div>
+                        <label class="block text-slate-400 mb-1">ค่าเฉลี่ย ($\bar{x}_2$)</label>
+                        <input type="number" id="mean2" value="58.1" step="0.1" class="w-full bg-slate-800 border border-slate-700 rounded-lg p-2 text-white font-mono focus:border-teal-400 focus:outline-none">
+                    </div>
+                    <div>
+                        <label class="block text-slate-400 mb-1">ส่วนเบี่ยงเบน ($SD_2$)</label>
+                        <input type="number" id="sd2" value="7.9" step="0.1" min="0.01" class="w-full bg-slate-800 border border-slate-700 rounded-lg p-2 text-white font-mono focus:border-teal-400 focus:outline-none">
+                    </div>
+                </div>
+            </div>
+
+            <!-- Variable Name & Unit -->
+            <div class="grid grid-cols-2 gap-3 text-xs">
+                <div>
+                    <label class="block text-slate-400 mb-1">ชื่อตัวแปรตาม (Dependent Variable)</label>
+                    <input type="text" id="varName" value="Berg Balance Scale" class="w-full bg-slate-800 border border-slate-700 rounded-lg p-2 text-white focus:border-teal-400 focus:outline-none">
+                </div>
+                <div>
+                    <label class="block text-slate-400 mb-1">หน่วยวัด (Unit)</label>
+                    <input type="text" id="varUnit" value="คะแนน" class="w-full bg-slate-800 border border-slate-700 rounded-lg p-2 text-white focus:border-teal-400 focus:outline-none">
+                </div>
+            </div>
+
+            <button id="calculateBtn" class="w-full bg-gradient-to-r from-teal-500 to-emerald-600 hover:from-teal-600 hover:to-emerald-700 text-white font-bold py-3 rounded-xl shadow-lg transition flex items-center justify-center gap-2">
+                <i class="fa-solid fa-calculator"></i> คำนวณผลลัพธ์ Independent t-test
+            </button>
+        </section>
+
+        <!-- Right Column: Results & Visualization Panel (7 cols) -->
+        <section class="lg:col-span-7 flex flex-col gap-6">
+
+            <!-- Metrics Highlight Grid -->
+            <div class="grid grid-cols-2 md:grid-cols-4 gap-3">
+                <div class="bg-slate-800/70 border border-slate-700/80 p-3.5 rounded-2xl flex flex-col justify-between shadow-lg">
+                    <span class="text-[11px] text-slate-400 font-medium">Mean Difference ($\Delta \bar{x}$)</span>
+                    <div class="flex items-baseline gap-1 mt-1">
+                        <span id="meanDiffVal" class="text-xl md:text-2xl font-extrabold text-teal-400">7.30</span>
+                    </div>
+                    <span id="unitDiffLabel" class="text-[10px] text-slate-500">คะแนน</span>
+                </div>
+
+                <div class="bg-slate-800/70 border border-slate-700/80 p-3.5 rounded-2xl flex flex-col justify-between shadow-lg">
+                    <span class="text-[11px] text-slate-400 font-medium">t-statistic ($t$)</span>
+                    <div class="flex items-baseline gap-1 mt-1">
+                        <span id="tStatVal" class="text-xl md:text-2xl font-extrabold text-cyan-400">3.51</span>
+                    </div>
+                    <span id="dfVal" class="text-[10px] text-slate-500">df = 58</span>
+                </div>
+
+                <div class="bg-slate-800/70 border border-slate-700/80 p-3.5 rounded-2xl flex flex-col justify-between shadow-lg">
+                    <span class="text-[11px] text-slate-400 font-medium">p-value</span>
+                    <div class="flex items-baseline gap-1 mt-1">
+                        <span id="pValueVal" class="text-xl md:text-2xl font-extrabold text-emerald-400">&lt; 0.001</span>
+                    </div>
+                    <span id="sigBadge" class="text-[10px] text-emerald-400 font-semibold">Significant</span>
+                </div>
+
+                <div class="bg-slate-800/70 border border-slate-700/80 p-3.5 rounded-2xl flex flex-col justify-between shadow-lg">
+                    <span class="text-[11px] text-slate-400 font-medium">Cohen's $d$ (Effect Size)</span>
+                    <div class="flex items-baseline gap-1 mt-1">
+                        <span id="cohenDVal" class="text-xl md:text-2xl font-extrabold text-amber-400">0.91</span>
+                    </div>
+                    <span id="effectLabel" class="text-[10px] text-amber-300">Large Effect</span>
+                </div>
+            </div>
+
+            <!-- Visualization: Mean & 95% CI Comparison Chart -->
+            <div class="bg-slate-800/60 border border-slate-700/80 rounded-2xl p-4 shadow-xl flex flex-col gap-3">
+                <div class="flex justify-between items-center">
+                    <h3 class="font-semibold text-slate-200 text-sm flex items-center gap-2">
+                        <i class="fa-solid fa-chart-column text-teal-400"></i> แผนภูมิเปรียบเทียบค่าเฉลี่ยและช่วงความเชื่อมั่น ($\bar{x} \pm 95\%\text{ CI}$)
+                    </h3>
+                    <span class="text-[11px] bg-slate-700/80 text-slate-300 px-2.5 py-0.5 rounded-full">
+                        Mean & 95% Confidence Interval
+                    </span>
+                </div>
+
+                <div class="relative w-full h-56 md:h-60 bg-slate-950 rounded-xl border border-slate-800 p-2">
+                    <canvas id="ciChart"></canvas>
+                </div>
+            </div>
+
+            <!-- Statistical Output & Levene's Test Box -->
+            <div class="bg-slate-800/60 border border-slate-700/80 rounded-2xl p-4 shadow-xl space-y-3">
+                <h3 class="font-semibold text-slate-200 text-sm flex items-center gap-2 border-b border-slate-700 pb-2">
+                    <i class="fa-solid fa-table text-teal-400"></i> ตารางแปลผลจำลองรูปแบบ SPSS Output
+                </h3>
+                
+                <div class="overflow-x-auto">
+                    <table class="w-full text-left text-xs font-mono text-slate-300">
+                        <thead class="bg-slate-900/80 text-slate-400 border-b border-slate-700">
+                            <tr>
+                                <th class="p-2">Assumptions / Method</th>
+                                <th class="p-2 text-center">F (Levene)</th>
+                                <th class="p-2 text-center">Sig. (Levene)</th>
+                                <th class="p-2 text-center">t</th>
+                                <th class="p-2 text-center">df</th>
+                                <th class="p-2 text-center">Sig. (2-tailed)</th>
+                                <th class="p-2 text-center">95% CI (Lower, Upper)</th>
+                            </tr>
+                        </thead>
+                        <tbody id="spssTableBody" class="divide-y divide-slate-800">
+                            <!-- Populated by JS -->
+                        </tbody>
+                    </table>
+                </div>
+            </div>
+
+            <!-- Clinical Interpretation & APA Reporting Box -->
+            <div class="bg-slate-800/60 border border-slate-700/80 rounded-2xl p-4 shadow-xl space-y-3">
+                <h3 class="font-semibold text-amber-400 text-sm flex items-center gap-2">
+                    <i class="fa-solid fa-file-signature"></i> สรุปผลการวิจัยทางคลินิกกายภาพบำบัด & การเขียนรายงานแบบ APA 7th
+                </h3>
+
+                <div class="bg-slate-950/70 p-3 rounded-xl border border-slate-800 text-xs space-y-2">
+                    <div class="text-slate-400 font-semibold border-b border-slate-800 pb-1">
+                        ข้อความสรุปผลรูปแบบมาตรฐาน APA 7th Style:
+                    </div>
+                    <div id="apaText" class="text-teal-300 font-mono select-all p-2 bg-slate-900 rounded border border-slate-800/80 leading-relaxed">
+                        <!-- APA formatted text -->
+                    </div>
+                </div>
+
+                <div class="bg-slate-900/70 p-3 rounded-xl border border-slate-800 text-xs leading-relaxed space-y-1">
+                    <div class="text-amber-300 font-semibold">คำอธิบายความหมายทางคลินิก (Clinical Interpretation):</div>
+                    <p id="clinicalText" class="text-slate-300">
+                        <!-- Clinical text -->
+                    </p>
+                </div>
+            </div>
+
+        </section>
+    </main>
+
+    <!-- Modals -->
+    <!-- Challenge Mission Modal -->
+    <div id="missionModal" class="fixed inset-0 bg-black/75 backdrop-blur-sm z-50 hidden flex items-center justify-center p-4">
+        <div class="bg-slate-800 border border-slate-700 rounded-2xl max-w-lg w-full p-6 shadow-2xl space-y-4">
+            <div class="flex justify-between items-start border-b border-slate-700 pb-3">
+                <div class="flex items-center gap-2">
+                    <div class="p-2 bg-amber-500/20 text-amber-400 rounded-lg">
+                        <i class="fa-solid fa-flag-checkered text-lg"></i>
+                    </div>
+                    <div>
+                        <h3 class="font-bold text-white text-base">โจทย์ท้าทายสถิติคลินิก (Independent t-test)</h3>
+                        <p class="text-xs text-slate-400">วิเคราะห์ข้อมูลและเลือกคำตอบที่ถูกต้องตามหลักสถิติ</p>
+                    </div>
+                </div>
+                <button id="closeMissionBtn" class="text-slate-400 hover:text-white transition">
+                    <i class="fa-solid fa-xmark text-lg"></i>
+                </button>
+            </div>
+
+            <div class="bg-slate-900/80 border border-slate-700 p-4 rounded-xl space-y-3">
+                <div class="flex items-center justify-between">
+                    <span id="missionBadge" class="text-[10px] bg-amber-500/20 text-amber-300 border border-amber-500/30 font-semibold px-2.5 py-0.5 rounded-full">
+                        เคสที่ 1/3
+                    </span>
+                    <button id="nextMissionBtn" class="text-xs text-teal-400 hover:underline">เปลี่ยนโจทย์เคส <i class="fa-solid fa-arrows-rotate"></i></button>
+                </div>
+                <p id="missionDesc" class="text-xs text-slate-200 leading-relaxed font-medium">
+                    -- โจทย์ --
+                </p>
+                
+                <div class="space-y-2 pt-2" id="missionOptions">
+                    <!-- Dynamic Options -->
+                </div>
+            </div>
+
+            <div id="missionResult" class="hidden p-3 rounded-xl text-xs font-medium border"></div>
+        </div>
+    </div>
+
+    <!-- Presets Modal -->
+    <div id="presetModal" class="fixed inset-0 bg-black/75 backdrop-blur-sm z-50 hidden flex items-center justify-center p-4">
+        <div class="bg-slate-800 border border-slate-700 rounded-2xl max-w-md w-full p-6 shadow-2xl space-y-4">
+            <div class="flex justify-between items-center border-b border-slate-700 pb-3">
+                <h3 class="font-bold text-white text-base flex items-center gap-2">
+                    <i class="fa-solid fa-folder-open text-teal-400"></i> เลือกเคสงานวิจัยตัวอย่าง
+                </h3>
+                <button id="closePresetBtn" class="text-slate-400 hover:text-white transition">
+                    <i class="fa-solid fa-xmark text-lg"></i>
+                </button>
+            </div>
+
+            <div class="space-y-2.5">
+                <button class="preset-option w-full text-left p-3 rounded-xl bg-slate-900 hover:bg-slate-700/80 border border-slate-700 transition space-y-1" data-preset="stroke">
+                    <div class="text-xs font-bold text-teal-400">1. การฝึกสมดุลกายในผู้ป่วย Stroke (Berg Balance)</div>
+                    <div class="text-[11px] text-slate-400">เปรียบเทียบการฝึกบนแผ่นทรงตัว Robotic vs การฝึกปกติ ($n=30$ ต่อกลุ่ม)</div>
+                </button>
+                <button class="preset-option w-full text-left p-3 rounded-xl bg-slate-900 hover:bg-slate-700/80 border border-slate-700 transition space-y-1" data-preset="oa">
+                    <div class="text-xs font-bold text-teal-400">2. ระดับความเจ็บปวดผู้ป่วยข้อเข่าเสื่อม (VAS Score)</div>
+                    <div class="text-[11px] text-slate-400">เปรียบเทียบคลื่นอัลตราซาวด์ร่วมกับการออกกำลังกาย vs ออกกำลังกายอย่างเดียว</div>
+                </button>
+                <button class="preset-option w-full text-left p-3 rounded-xl bg-slate-900 hover:bg-slate-700/80 border border-slate-700 transition space-y-1" data-preset="copd">
+                    <div class="text-xs font-bold text-teal-400">3. ระยะทางเดิน 6 นาทีผู้ป่วยปอดอุดกั้นเรื้อรัง (6MWD)</div>
+                    <div class="text-[11px] text-slate-400">เปรียบเทียบโปรแกรมฟื้นฟูสมรรถภาพปอดแบบเข้มข้น vs แบบมาตรฐาน</div>
+                </button>
+            </div>
+        </div>
+    </div>
+
+    <!-- JavaScript Calculation Engine -->
+    <script>
+        // DOM Elements
+        const n1Input = document.getElementById('n1');
+        const mean1Input = document.getElementById('mean1');
+        const sd1Input = document.getElementById('sd1');
+
+        const n2Input = document.getElementById('n2');
+        const mean2Input = document.getElementById('mean2');
+        const sd2Input = document.getElementById('sd2');
+
+        const varNameInput = document.getElementById('varName');
+        const varUnitInput = document.getElementById('varUnit');
+        const tailTypeSelect = document.getElementById('tailType');
+
+        const calculateBtn = document.getElementById('calculateBtn');
+        const resetFormBtn = document.getElementById('resetFormBtn');
+
+        // Output Display Elements
+        const meanDiffVal = document.getElementById('meanDiffVal');
+        const unitDiffLabel = document.getElementById('unitDiffLabel');
+        const tStatVal = document.getElementById('tStatVal');
+        const dfVal = document.getElementById('dfVal');
+        const pValueVal = document.getElementById('pValueVal');
+        const sigBadge = document.getElementById('sigBadge');
+        const cohenDVal = document.getElementById('cohenDVal');
+        const effectLabel = document.getElementById('effectLabel');
+        const spssTableBody = document.getElementById('spssTableBody');
+        const apaText = document.getElementById('apaText');
+        const clinicalText = document.getElementById('clinicalText');
+
+        // Modals & Challenge Buttons
+        const missionBtn = document.getElementById('missionBtn');
+        const missionModal = document.getElementById('missionModal');
+        const closeMissionBtn = document.getElementById('closeMissionBtn');
+        const missionDesc = document.getElementById('missionDesc');
+        const missionBadge = document.getElementById('missionBadge');
+        const missionOptions = document.getElementById('missionOptions');
+        const missionResult = document.getElementById('missionResult');
+        const nextMissionBtn = document.getElementById('nextMissionBtn');
+
+        const loadPresetBtn = document.getElementById('loadPresetBtn');
+        const presetModal = document.getElementById('presetModal');
+        const closePresetBtn = document.getElementById('closePresetBtn');
+
+        let ciChartInstance = null;
+
+        // Statistical Helper Functions
+        // Student's t Distribution Cumulative Distribution Function (CDF) Approximation
+        function studentTCDF(t, df) {
+            let x = df / (df + t * t);
+            let a = df / 2;
+            let b = 0.5;
+            // Incomplete Beta Function approximation
+            let beta = ibeta(a, b, x);
+            let p = 0.5 * beta;
+            return t > 0 ? 1 - p : p;
+        }
+
+        function ibeta(a, b, x) {
+            // Continued fraction approximation for incomplete beta function
+            if (x === 0) return 0;
+            if (x === 1) return 1;
+            
+            let lbeta = lgamma(a) + lgamma(b) - lgamma(a + b);
+            let front = Math.exp(Math.log(x) * a + Math.log(1 - x) * b - lbeta) / a;
+
+            let f = 1, c = 1, d = 0;
+            for (let i = 1; i <= 100; i++) {
+                let m = i / 2;
+                let numerator;
+                if (i % 2 === 0) {
+                    numerator = (m * (b - m) * x) / ((a + 2 * m - 1) * (a + 2 * m));
+                } else {
+                    let mPlus1 = (i - 1) / 2;
+                    numerator = -((a + mPlus1) * (a + b + mPlus1) * x) / ((a + 2 * mPlus1) * (a + 2 * mPlus1 + 1));
+                }
+                d = 1 + numerator * d;
+                if (Math.abs(d) < 1e-30) d = 1e-30;
+                d = 1 / d;
+                c = 1 + numerator / c;
+                if (Math.abs(c) < 1e-30) c = 1e-30;
+                f *= c * d;
+                if (Math.abs(c * d - 1) < 1e-8) break;
+            }
+            return front * (f - 1);
+        }
+
+        function lgamma(z) {
+            let p = [
+                676.5203681218851, -1259.139216722289, 771.3234287776531,
+                -176.6150291621406, 12.507343278686905, -0.13857109526572012,
+                9.984369578019571e-6, 1.5056327351493116e-7
+            ];
+            if (z < 0.5) return Math.PI / (Math.sin(Math.PI * z) * Math.exp(lgamma(1 - z)));
+            z -= 1;
+            let x = 0.99999999999980993;
+            for (let i = 0; i < p.length; i++) x += p[i] / (z + i + 1);
+            let t = z + p.length - 0.5;
+            return 0.5 * Math.log(2 * Math.PI) + (z + 0.5) * Math.log(t) - t + Math.log(x);
+        }
+
+        // Main Calculation Handler
+        function computeTTest() {
+            const n1 = parseInt(n1Input.value);
+            const mean1 = parseFloat(mean1Input.value);
+            const sd1 = parseFloat(sd1Input.value);
+
+            const n2 = parseInt(n2Input.value);
+            const mean2 = parseFloat(mean2Input.value);
+            const sd2 = parseFloat(sd2Input.value);
+
+            const varName = varNameInput.value || "ตัวแปรตาม";
+            const unit = varUnitInput.value || "หน่วย";
+            const isTwoTailed = tailTypeSelect.value === 'two';
+
+            if ([n1, n2, sd1, sd2].some(v => isNaN(v) || v <= 0) || [mean1, mean2].some(v => isNaN(v))) {
+                return;
+            }
+
+            // 1. Degrees of Freedom
+            const dfEqual = n1 + n2 - 2;
+
+            // 2. Pooled Variance & Standard Error (Equal Variances Assumed)
+            const var1 = Math.pow(sd1, 2);
+            const var2 = Math.pow(sd2, 2);
+            const pooledVar = ((n1 - 1) * var1 + (n2 - 1) * var2) / dfEqual;
+            const seEqual = Math.sqrt(pooledVar * (1 / n1 + 1 / n2));
+
+            // 3. t-statistic (Equal Variances Assumed)
+            const diff = mean1 - mean2;
+            const tStatEqual = diff / seEqual;
+
+            // 4. p-value calculation
+            let pValEqual = 2 * (1 - studentTCDF(Math.abs(tStatEqual), dfEqual));
+            if (!isTwoTailed) pValEqual /= 2;
+
+            // 5. Welch's t-test (Equal Variances Not Assumed)
+            const seNotEqual = Math.sqrt(var1 / n1 + var2 / n2);
+            const tStatNotEqual = diff / seNotEqual;
+            const dfWelch = Math.pow(var1 / n1 + var2 / n2, 2) / (Math.pow(var1 / n1, 2) / (n1 - 1) + Math.pow(var2 / n2, 2) / (n2 - 1));
+            let pValNotEqual = 2 * (1 - studentTCDF(Math.abs(tStatNotEqual), dfWelch));
+            if (!isTwoTailed) pValNotEqual /= 2;
+
+            // 6. Levene's Test Approximation (F-ratio of variances)
+            const fLevene = var1 >= var2 ? var1 / var2 : var2 / var1;
+            const df1Levene = 1;
+            const df2Levene = n1 + n2 - 2;
+            // Rough p-value estimation for Levene
+            const pLevene = 2 * (1 - studentTCDF(Math.sqrt(fLevene), df2Levene));
+
+            // 7. Cohen's d Effect Size (Pooled SD)
+            const pooledSD = Math.sqrt(pooledVar);
+            const cohenD = Math.abs(diff) / pooledSD;
+
+            // 8. 95% Confidence Interval of Difference
+            const tCrit = 2.0; // Approximation for 95% CI critical t
+            const ciLower = diff - tCrit * seEqual;
+            const ciUpper = diff + tCrit * seEqual;
+
+            // Update UI Labels
+            meanDiffVal.textContent = diff.toFixed(2);
+            unitDiffLabel.textContent = unit;
+            tStatVal.textContent = tStatEqual.toFixed(2);
+            dfVal.textContent = `df = ${dfEqual}`;
+            
+            if (pValEqual < 0.001) {
+                pValueVal.textContent = "< 0.001";
+            } else {
+                pValueVal.textContent = pValEqual.toFixed(3);
+            }
+
+            if (pValEqual < 0.05) {
+                sigBadge.textContent = "Significant (p < .05)";
+                sigBadge.className = "text-[10px] text-emerald-400 font-semibold";
+            } else {
+                sigBadge.textContent = "Not Significant";
+                sigBadge.className = "text-[10px] text-rose-400 font-semibold";
+            }
+
+            cohenDVal.textContent = cohenD.toFixed(2);
+            if (cohenD < 0.2) {
+                effectLabel.textContent = "Negligible Effect";
+            } else if (cohenD < 0.5) {
+                effectLabel.textContent = "Small Effect";
+            } else if (cohenD < 0.8) {
+                effectLabel.textContent = "Medium Effect";
+            } else {
+                effectLabel.textContent = "Large Effect";
+            }
+
+            // Populate Simulated SPSS Table
+            spssTableBody.innerHTML = `
+                <tr class="hover:bg-slate-800/50 transition">
+                    <td class="p-2 font-sans font-semibold text-teal-300">Equal variances assumed</td>
+                    <td class="p-2 text-center">${fLevene.toFixed(2)}</td>
+                    <td class="p-2 text-center">${pLevene.toFixed(3)}</td>
+                    <td class="p-2 text-center">${tStatEqual.toFixed(2)}</td>
+                    <td class="p-2 text-center">${dfEqual}</td>
+                    <td class="p-2 text-center text-emerald-400">${pValEqual < 0.001 ? '< .001' : pValEqual.toFixed(3)}</td>
+                    <td class="p-2 text-center">(${ciLower.toFixed(2)}, ${ciUpper.toFixed(2)})</td>
+                </tr>
+                <tr class="hover:bg-slate-800/50 transition opacity-80">
+                    <td class="p-2 font-sans text-slate-400">Equal variances not assumed</td>
+                    <td class="p-2 text-center text-slate-600">-</td>
+                    <td class="p-2 text-center text-slate-600">-</td>
+                    <td class="p-2 text-center">${tStatNotEqual.toFixed(2)}</td>
+                    <td class="p-2 text-center">${dfWelch.toFixed(1)}</td>
+                    <td class="p-2 text-center">${pValNotEqual < 0.001 ? '< .001' : pValNotEqual.toFixed(3)}</td>
+                    <td class="p-2 text-center">(${ciLower.toFixed(2)}, ${ciUpper.toFixed(2)})</td>
+                </tr>
+            `;
+
+            // Format APA Text
+            const pTextAPA = pValEqual < 0.001 ? "p < .001" : `p = ${pValEqual.toFixed(3)}`;
+            apaText.textContent = `t(${dfEqual}) = ${tStatEqual.toFixed(2)}, ${pTextAPA}, Cohen's d = ${cohenD.toFixed(2)}, 95% CI [${ciLower.toFixed(2)}, ${ciUpper.toFixed(2)}]`;
+
+            // Format Clinical Explanation
+            let diffSign = diff > 0 ? "มากกว่า" : "น้อยกว่า";
+            let sigText = pValEqual < 0.05 
+                ? `มีความแตกต่างกันอย่างมีนัยสำคัญทางสถิติ ($p < .05$) โดยกลุ่มที่ 1 มีค่าเฉลี่ย${varName}สูงกว่ากลุ่มที่ 2 อยู่ ${Math.abs(diff).toFixed(2)} ${unit}`
+                : `ไม่มีความแตกต่างกันอย่างมีนัยสำคัญทางสถิติ ($p \geq .05$) ระหว่างกลุ่มที่ 1 และกลุ่มที่ 2`;
+
+            clinicalText.innerHTML = `
+                จากการวิเคราะห์สถิติ Independent t-test พบว่า ${sigText} 
+                ขนาดอิทธิพล (Effect Size) เท่ากับ ${cohenD.toFixed(2)} สะท้อนถึงผลการรักษาที่มีระดับความแตกต่างเชิงคลินิก 
+                <strong>${effectLabel.textContent}</strong>
+            `;
+
+            // Render Chart
+            renderCIChart(mean1, sd1, n1, mean2, sd2, n2, varName, unit);
+        }
+
+        // Render Mean & 95% CI Chart
+        function renderCIChart(m1, sd1, n1, m2, sd2, n2, varName, unit) {
+            const ctx = document.getElementById('ciChart').getContext('2d');
+
+            const se1 = sd1 / Math.sqrt(n1);
+            const se2 = sd2 / Math.sqrt(n2);
+
+            const ci1Low = m1 - 1.96 * se1;
+            const ci1High = m1 + 1.96 * se1;
+
+            const ci2Low = m2 - 1.96 * se2;
+            const ci2High = m2 + 1.96 * se2;
+
+            if (ciChartInstance) {
+                ciChartInstance.destroy();
+            }
+
+            ciChartInstance = new Chart(ctx, {
+                type: 'bar',
+                data: {
+                    labels: ['กลุ่มที่ 1 (Intervention)', 'กลุ่มที่ 2 (Control)'],
+                    datasets: [{
+                        label: 'ค่าเฉลี่ย (' + unit + ')',
+                        data: [m1, m2],
+                        backgroundColor: ['rgba(99, 102, 241, 0.6)', 'rgba(20, 184, 166, 0.6)'],
+                        borderColor: ['rgba(99, 102, 241, 1)', 'rgba(20, 184, 166, 1)'],
+                        borderWidth: 2,
+                        borderRadius: 8,
+                        barThickness: 45
+                    }]
+                },
+                options: {
+                    responsive: true,
+                    maintainAspectRatio: false,
+                    plugins: {
+                        legend: { display: false },
+                        tooltip: {
+                            callbacks: {
+                                label: function(context) {
+                                    let idx = context.dataIndex;
+                                    let m = idx === 0 ? m1 : m2;
+                                    let low = idx === 0 ? ci1Low : ci2Low;
+                                    let high = idx === 0 ? ci1High : ci2High;
+                                    return ` Mean: ${m.toFixed(2)} (95% CI: ${low.toFixed(2)} - ${high.toFixed(2)})`;
+                                }
+                            }
+                        }
+                    },
+                    scales: {
+                        y: {
+                            grid: { color: 'rgba(255, 255, 255, 0.08)' },
+                            ticks: { color: '#94a3b8' },
+                            title: { display: true, text: `${varName} (${unit})`, color: '#cbd5e1' }
+                        },
+                        x: {
+                            grid: { display: false },
+                            ticks: { color: '#cbd5e1', font: { weight: 'bold' } }
+                        }
+                    }
+                }
+            });
+        }
+
+        // Challenge Missions Data
+        const missions = [
+            {
+                id: 1,
+                title: "เคสที่ 1: การเปรียบเทียบการเกร็งในผู้ป่วย Stroke",
+                description: "นักวิจัยเปรียบเทียบค่า Modified Ashworth Scale (MAS) หลังการรักษาด้วย Dry Needling (กลุ่ม 1: n=25, Mean=1.4, SD=0.5) เทียบกับ Sham Control (กลุ่ม 2: n=25, Mean=2.2, SD=0.6) ผลการทดสอบ t-test จะเป็นอย่างไร?",
+                options: [
+                    { text: "ต่างกันอย่างมีนัยสำคัญ (p < .001) ขนาดอิทธิพลใหญ่ (d > 0.8)", correct: true },
+                    { text: "ไม่แตกต่างกันอย่างมีนัยสำคัญ (p > .05)", correct: false },
+                    { text: "กลุ่ม Control มีค่า MAS ลดลงมากกว่ากลุ่ม Intervention", correct: false }
+                ],
+                presetData: { n1: 25, mean1: 1.4, sd1: 0.5, n2: 25, mean2: 2.2, sd2: 0.6, varName: "MAS Score", varUnit: "ระดับ" }
+            },
+            {
+                id: 2,
+                title: "เคสที่ 2: ความแข็งแรงของกล้ามเนื้อหลังการออกกำลังกาย",
+                description: "เปรียบเทียบแรงบีบมือ (Grip Strength) กลุ่มฝึกด้วยยางยืด (n=20, Mean=24.5 kg, SD=4.1) เทียบกับกลุ่มฝึกยกน้ำหนัก (n=20, Mean=25.1 kg, SD=4.3) ผลสรุปทางคลินิกคือ?",
+                options: [
+                    { text: "ยางยืดได้ผลดีกว่ายกน้ำหนักอย่างมีนัยสำคัญ", correct: false },
+                    { text: "ไม่พบความแตกต่างอย่างมีนัยสำคัญทางสถิติระหว่างสองวิธี (p > .05)", correct: true },
+                    { text: "มีค่า p-value < .01", correct: false }
+                ],
+                presetData: { n1: 20, mean1: 24.5, sd1: 4.1, n2: 20, mean2: 25.1, sd2: 4.3, varName: "Grip Strength", varUnit: "kg" }
+            }
+        ];
+
+        let currentMissionIdx = 0;
+
+        function loadMission(idx) {
+            currentMissionIdx = idx;
+            const m = missions[idx];
+            missionBadge.textContent = `เคสที่ ${idx + 1}/${missions.length}`;
+            missionDesc.textContent = m.description;
+            missionResult.classList.add('hidden');
+
+            missionOptions.innerHTML = '';
+            m.options.forEach((opt, optIdx) => {
+                const btn = document.createElement('button');
+                btn.className = 'w-full text-left p-2.5 rounded-lg bg-slate-800 hover:bg-slate-700 border border-slate-700 text-xs text-slate-200 transition';
+                btn.textContent = `${optIdx + 1}. ${opt.text}`;
+                btn.onclick = () => checkMissionAnswer(opt.correct, m.presetData);
+                missionOptions.appendChild(btn);
+            });
+        }
+
+        function checkMissionAnswer(isCorrect, presetData) {
+            missionResult.classList.remove('hidden', 'bg-emerald-500/10', 'border-emerald-500/30', 'text-emerald-400', 'bg-rose-500/10', 'border-rose-500/30', 'text-rose-400');
+            if (isCorrect) {
+                missionResult.classList.add('bg-emerald-500/10', 'border-emerald-500/30', 'text-emerald-400');
+                missionResult.innerHTML = `<i class="fa-solid fa-circle-check"></i> <strong>ถูกต้อง!</strong> คุณวิเคราะห์ผลสถิติทางคลินิกได้แม่นยำ`;
+                // Auto load dataset
+                n1Input.value = presetData.n1; mean1Input.value = presetData.mean1; sd1Input.value = presetData.sd1;
+                n2Input.value = presetData.n2; mean2Input.value = presetData.mean2; sd2Input.value = presetData.sd2;
+                varNameInput.value = presetData.varName; varUnitInput.value = presetData.varUnit;
+                computeTTest();
+            } else {
+                missionResult.classList.add('bg-rose-500/10', 'border-rose-500/30', 'text-rose-400');
+                missionResult.innerHTML = `<i class="fa-solid fa-circle-xmark"></i> <strong>ยังไม่ถูกต้อง</strong> ลองพิจารณาค่า p-value และ Effect size อีกครั้ง`;
+            }
+        }
+
+        // Preset Handlers
+        const presets = {
+            stroke: { n1: 30, mean1: 65.4, sd1: 8.2, n2: 30, mean2: 58.1, sd2: 7.9, varName: "Berg Balance Scale", varUnit: "คะแนน" },
+            oa: { n1: 25, mean1: 3.2, sd1: 1.1, n2: 25, mean2: 5.4, sd2: 1.4, varName: "VAS Pain Score", varUnit: "คะแนน" },
+            copd: { n1: 40, mean1: 420.5, sd1: 45.2, n2: 40, mean2: 385.0, sd2: 48.6, varName: "6MWD", varUnit: "เมตร" }
+        };
+
+        document.querySelectorAll('.preset-option').forEach(btn => {
+            btn.addEventListener('click', (e) => {
+                const key = e.currentTarget.dataset.preset;
+                const data = presets[key];
+                if (data) {
+                    n1Input.value = data.n1; mean1Input.value = data.mean1; sd1Input.value = data.sd1;
+                    n2Input.value = data.n2; mean2Input.value = data.mean2; sd2Input.value = data.sd2;
+                    varNameInput.value = data.varName; varUnitInput.value = data.varUnit;
+                    computeTTest();
+                    presetModal.classList.add('hidden');
+                }
+            });
+        });
+
+        // Event Listeners
+        [n1Input, mean1Input, sd1Input, n2Input, mean2Input, sd2Input, varNameInput, varUnitInput, tailTypeSelect].forEach(input => {
+            input.addEventListener('input', computeTTest);
+        });
+
+        calculateBtn.addEventListener('click', computeTTest);
+
+        resetFormBtn.addEventListener('click', () => {
+            n1Input.value = 30; mean1Input.value = 65.4; sd1Input.value = 8.2;
+            n2Input.value = 30; mean2Input.value = 58.1; sd2Input.value = 7.9;
+            varNameInput.value = "Berg Balance Scale"; varUnitInput.value = "คะแนน";
+            computeTTest();
+        });
+
+        // Modal Toggles
+        missionBtn.addEventListener('click', () => {
+            loadMission(currentMissionIdx);
+            missionModal.classList.remove('hidden');
+        });
+        closeMissionBtn.addEventListener('click', () => missionModal.classList.add('hidden'));
+
+        nextMissionBtn.addEventListener('click', () => {
+            currentMissionIdx = (currentMissionIdx + 1) % missions.length;
+            loadMission(currentMissionIdx);
+        });
+
+        loadPresetBtn.addEventListener('click', () => presetModal.classList.remove('hidden'));
+        closePresetBtn.addEventListener('click', () => presetModal.classList.add('hidden'));
+
+        // Initial Load
+        window.onload = function() {
+            computeTTest();
+        };
+    </script>
+</body>
+</html>
